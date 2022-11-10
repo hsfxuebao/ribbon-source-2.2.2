@@ -27,12 +27,16 @@ import com.google.common.base.Optional;
  * @author awang
  *
  */
+//抽象策略，继承自ClientConfigEnabledRoundRobinRule
+//基于Predicate的策略
+//Predicateshi Google Guava Collection工具对集合进行过滤的条件接口
 public abstract class PredicateBasedRule extends ClientConfigEnabledRoundRobinRule {
    
     /**
      * Method that provides an instance of {@link AbstractServerPredicate} to be used by this class.
      * 
      */
+    //定义了一个抽象函数来获取AbstractServerPredicate
     public abstract AbstractServerPredicate getPredicate();
         
     /**
@@ -42,6 +46,9 @@ public abstract class PredicateBasedRule extends ClientConfigEnabledRoundRobinRu
     @Override
     public Server choose(Object key) {
         ILoadBalancer lb = getLoadBalancer();
+        //通过AbstractServerPredicate的chooseRoundRobinAfterFiltering函数来选出具体的服务实例
+        //AbstractServerPredicate的子类实现的Predicate逻辑来过滤一部分服务实例
+        //然后在以轮询的方式从过滤后的实例中选出一个
         Optional<Server> server = getPredicate().chooseRoundRobinAfterFiltering(lb.getAllServers(), key);
         if (server.isPresent()) {
             return server.get();

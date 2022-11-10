@@ -50,7 +50,9 @@ public class RandomRule extends AbstractLoadBalancerRule {
             if (Thread.interrupted()) {
                 return null;
             }
+            // 获取全部可用的服务
             List<Server> upList = lb.getReachableServers();
+            // 获取所有节点，不区分是否可用
             List<Server> allList = lb.getAllServers();
 
             int serverCount = allList.size();
@@ -62,6 +64,7 @@ public class RandomRule extends AbstractLoadBalancerRule {
                 return null;
             }
 
+            // todo 随机选择一个
             int index = rand.nextInt(serverCount);
             server = upList.get(index);
 
@@ -75,6 +78,7 @@ public class RandomRule extends AbstractLoadBalancerRule {
                 continue;
             }
 
+            // 判断服务是否还存活
             if (server.isAlive()) {
                 return (server);
             }

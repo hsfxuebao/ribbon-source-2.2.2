@@ -40,6 +40,7 @@ public class RoundRobinRule extends AbstractLoadBalancerRule {
     private static Logger log = LoggerFactory.getLogger(RoundRobinRule.class);
 
     public RoundRobinRule() {
+        // 初始化的请求为0
         nextServerCyclicCounter = new AtomicInteger(0);
     }
 
@@ -56,9 +57,12 @@ public class RoundRobinRule extends AbstractLoadBalancerRule {
 
         Server server = null;
         int count = 0;
+        //最多尝试10次，如果都没有找到可用的服务器 就返回null
         while (server == null && count++ < 10) {
             List<Server> reachableServers = lb.getReachableServers();
+            // 获取可用的服务
             List<Server> allServers = lb.getAllServers();
+            // 可用服务的数量
             int upCount = reachableServers.size();
             int serverCount = allServers.size();
 
@@ -67,6 +71,7 @@ public class RoundRobinRule extends AbstractLoadBalancerRule {
                 return null;
             }
 
+            // todo 调用轮询算法计算服务下标
             int nextServerIndex = incrementAndGetModulo(serverCount);
             server = allServers.get(nextServerIndex);
 
@@ -92,12 +97,15 @@ public class RoundRobinRule extends AbstractLoadBalancerRule {
     }
 
     /**
-     * Inspired by the implementation of {@link AtomicInteger#incrementAndGet()}.
+     * nextServerCyclicCounter 初始值为0，modulo 为所有服务器总数
+     *  next值 为 1，2，3......
+     * 正常情况下 current 和 next 肯定是相等的
      *
      * @param modulo The modulo to bound the value of the counter.
      * @return The next value.
      */
     private int incrementAndGetModulo(int modulo) {
+        // 自旋 +1
         for (;;) {
             int current = nextServerCyclicCounter.get();
             int next = (current + 1) % modulo;

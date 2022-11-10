@@ -129,6 +129,8 @@ public abstract class AbstractServerPredicate implements Predicate<PredicateKey>
             return ImmutableList.copyOf(Iterables.filter(servers, this.getServerOnlyPredicate()));            
         } else {
             List<Server> results = Lists.newArrayList();
+            //遍历服务清单，使用apply方法来判断实例是否需要保留，如果是，就添加到结果列表中
+            //所以apply方法需要在子类中实现，子类就可实现高级策略
             for (Server server: servers) {
                 if (this.apply(new PredicateKey(loadBalancerKey, server))) {
                     results.add(server);
@@ -144,10 +146,13 @@ public abstract class AbstractServerPredicate implements Predicate<PredicateKey>
      *  
      */
     public Optional<Server> chooseRandomlyAfterFiltering(List<Server> servers) {
+        //先通过内部定义的getEligibleServers函数来获取备选清单（实现了过滤）
         List<Server> eligible = getEligibleServers(servers);
         if (eligible.size() == 0) {
+            //如果返回的清单为空，则用Optional.absent()来表示不存在
             return Optional.absent();
         }
+        //以线性轮询的方式从备选清单中获取一个实例
         return Optional.of(eligible.get(random.nextInt(eligible.size())));
     }
     

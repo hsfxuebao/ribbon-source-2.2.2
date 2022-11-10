@@ -36,16 +36,21 @@ import com.netflix.client.config.IClientConfig;
 public class ZoneAvoidanceRule extends PredicateBasedRule {
 
     private static final Random random = new Random();
-    
+
+    //使用CompositePredicate来进行服务实例清单过滤。
     private CompositePredicate compositePredicate;
     
     public ZoneAvoidanceRule() {
         super();
+        //判断一个区域的服务是否可用的过滤条件
         ZoneAvoidancePredicate zonePredicate = new ZoneAvoidancePredicate(this);
+        //判断一个服务的连接数是否过多的过滤条件
         AvailabilityPredicate availabilityPredicate = new AvailabilityPredicate(this);
+        //将这两个条件组合到一起
         compositePredicate = createCompositePredicate(zonePredicate, availabilityPredicate);
     }
-    
+
+    //这里构造了一个两个过滤条件的Predicate
     private CompositePredicate createCompositePredicate(ZoneAvoidancePredicate p1, AvailabilityPredicate p2) {
         return CompositePredicate.withPredicates(p1, p2)
                              .addFallbackPredicate(p2)

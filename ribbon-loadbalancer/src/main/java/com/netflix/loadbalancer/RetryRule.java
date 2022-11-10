@@ -27,7 +27,9 @@ import com.netflix.client.config.IClientConfig;
  * 
  */
 public class RetryRule extends AbstractLoadBalancerRule {
+	// 使用的轮询的规则
 	IRule subRule = new RoundRobinRule();
+	// 重试时间500毫秒
 	long maxRetryMillis = 500;
 
 	public RetryRule() {
@@ -50,6 +52,7 @@ public class RetryRule extends AbstractLoadBalancerRule {
 		return subRule;
 	}
 
+	// 设置重试时间
 	public void setMaxRetryMillis(long maxRetryMillis) {
 		if (maxRetryMillis > 0) {
 			this.maxRetryMillis = maxRetryMillis;
@@ -77,18 +80,20 @@ public class RetryRule extends AbstractLoadBalancerRule {
 	 */
 	public Server choose(ILoadBalancer lb, Object key) {
 		long requestTime = System.currentTimeMillis();
+		//超时时间为 当前时间+500 ms
 		long deadline = requestTime + maxRetryMillis;
 
 		Server answer = null;
-
+		//默认的策略是 RoundRobinRule
 		answer = subRule.choose(key);
 
+		//如果默认策略选出的服务器为空，或者该服务器状态为不存活并且当前时间还在超时时间内
 		if (((answer == null) || (!answer.isAlive()))
 				&& (System.currentTimeMillis() < deadline)) {
 
 			InterruptTask task = new InterruptTask(deadline
 					- System.currentTimeMillis());
-
+			// 只要满足条件，一直重试
 			while (!Thread.interrupted()) {
 				answer = subRule.choose(key);
 
@@ -104,6 +109,7 @@ public class RetryRule extends AbstractLoadBalancerRule {
 			task.cancel();
 		}
 
+		//如果在最大超时时间内仍未能选出可用的服务器那就返回空
 		if ((answer == null) || (!answer.isAlive())) {
 			return null;
 		} else {

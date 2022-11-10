@@ -81,7 +81,12 @@ public class AvailabilityFilteringRule extends PredicateBasedRule {
     @Override
     public Server choose(Object key) {
         int count = 0;
+        //通过轮询选择一个server
         Server server = roundRobinRule.choose(key);
+        //尝试10次如果都不满足要求，就放弃，采用父类的choose
+        //这里为啥尝试10次？
+        //1. 轮询结果相互影响，可能导致某个请求每次调用轮询返回的都是同一个有问题的server
+        //2. 集群很大时，遍历整个集群判断效率低，我们假设集群中健康的实例要比不健康的多，如果10次找不到，就用父类的choose，这也是一种快速失败机制
         while (count++ <= 10) {
             if (predicate.apply(new PredicateKey(server))) {
                 return server;
